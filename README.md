@@ -40,7 +40,7 @@ Add AI-based chatbot integration (e.g., GPT API)
 Integrate with APIs like weather, news, etc.
 Add GUI using JavaFX or Swing
 🙋‍♂️ Author
-Gurusaran Passionate Java Developer | Tech Enthusiast 🔗 LinkedIn
+Gurusaran Passionate Java Developer | Tech Enthusiast | Linkedin-https://www.linkedIn.com/in/guru-saran-77a371242/
 
 📜 License
 This project is licensed under the MIT License - see the LICENSE file for details.
