@@ -1,0 +1,133 @@
+import com.sun.speech.freetts.*;
+import edu.cmu.sphinx.api.*;
+
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.util.concurrent.*;
+
+public class VoiceAssistant {
+    LiveSpeechRecognizer recognizer;
+    Voice voice;
+    ProcessBuilder pb = new ProcessBuilder();
+    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    public VoiceAssistant() {
+        try {
+            // Setup FreeTTS voice
+            System.setProperty("freetts.voices", "com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory");
+            voice = VoiceManager.getInstance().getVoice("kevin16");
+            if (voice == null) {
+                System.out.println("❌ Voice not found");
+                return;
+            }
+            voice.allocate();
+
+            // Setup speech recognition configuration
+            Configuration config = new Configuration();
+            config.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+            config.setDictionaryPath("src\\DictionaryFile.dic");
+            config.setLanguageModelPath("src\\LanguageFile.lm");
+
+            recognizer = new LiveSpeechRecognizer(config);
+            recognizer.startRecognition(true);
+            speak("Voice assistant is now listening... Say 'wake up' to begin.");
+
+            while (true) {
+                SpeechResult result = recognizer.getResult();
+                if (result == null) continue;
+
+                String command = result.getHypothesis().toLowerCase();
+                System.out.println("User: " + command);
+
+                if (command.contains("wake up") || command.contains("hey jarvis")) {
+                    speak("Waking up... Please confirm your identity with the secret code.");
+
+                    // Identity check
+                    SpeechResult identityResult = recognizer.getResult();
+                    String identity = identityResult.getHypothesis().toLowerCase();
+                    System.out.println("User: " + identity);
+
+                    if (identity.contains("a")) {
+                        speak("Identity confirmed. Hello sir, how can I help you?");
+
+                        while (true) {
+                            SpeechResult userCommandResult = recognizer.getResult();
+                            if (userCommandResult == null) continue;
+                            String userCommand = userCommandResult.getHypothesis().toLowerCase();
+                            System.out.println("User: " + userCommand);
+
+                            if (userCommand.contains("hello")) {
+                                speak("Hello sir, how are you?");
+                            } else if (userCommand.contains("i'm fine") || userCommand.contains("how are you")) {
+                                speak("I'm doing great! Would you like me to play a song?");
+                                SpeechResult musicResult = recognizer.getResult();
+                                String musicCommand = musicResult.getHypothesis().toLowerCase();
+
+                                if (musicCommand.contains("yes") || musicCommand.contains("sure")) {
+                                    speak("Playing your favorite song.");
+                                    pb.command("cmd.exe", "/c", "start spotify");
+                                    pb.start();
+                                    scheduler.schedule(() -> simulateSpacebar(), 6, TimeUnit.SECONDS);
+                                } else {
+                                    speak("Alright. Let me know if you need anything.");
+                                }
+                            } else if (userCommand.contains("open chrome")) {
+                                speak("Opening Chrome.");
+                                pb.command("cmd.exe", "/c", "start chrome");
+                                pb.start();
+                            } else if (userCommand.contains("open whatsapp")) {
+                                speak("Opening WhatsApp.");
+                                pb.command("cmd.exe", "/c", "start chrome https://web.whatsapp.com/");
+                                pb.start();
+                            } else if (userCommand.contains("close")) {
+                                speak("Closing applications.");
+                                pb.command("cmd.exe", "/c", "TASKKILL /IM chrome.exe");
+                                pb.start();
+                                pb.command("cmd.exe", "/c", "TASKKILL /F /IM spotify.exe");
+                                pb.start();
+                            } else if (userCommand.contains("thanks")) {
+                                speak("You're always welcome, sir.");
+                            } else if (userCommand.contains("bye") || userCommand.contains("shutdown")) {
+                                speak("Goodbye sir. Take care.");
+                                System.exit(0);
+                            } else {
+                                speak("Sorry, I didn't get that.");
+                            }
+                        }
+                    } else {
+                        speak("Access Denied.");
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void simulateSpacebar() {
+        try {
+            Robot robot = new Robot();
+            robot.keyPress(KeyEvent.VK_SPACE);
+            robot.keyRelease(KeyEvent.VK_SPACE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void speak(String text) {
+        try {
+            System.out.println("Jarvis: " + text);
+            voice.setRate(180);
+            voice.setPitch(100);
+            voice.setVolume(1.0f);
+            voice.speak(text);
+        } catch (Exception e) {
+            System.out.println("❌ Failed to speak: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        new VoiceAssistant();
+    }
+}
